@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Castle.DynamicProxy.Generators;
 using CoinbasePro.Network.HttpClient;
 using CoinbasePro.Network.HttpRequest;
 using CoinbasePro.Services.Products.Models;
@@ -102,6 +103,9 @@ namespace CoinbasePro.Services.Products
                 candleList.AddRange(await GetHistoricRatesAsync(productPair, batchStart, batchEnd.Value, (int)granularity));
                 requests++;
 
+                // No results found, soldier on
+                if (candleList.Count == 0) break;
+
                 var previousBatchEnd = batchEnd;
                 batchEnd = candleList.LastOrDefault()?.Time;
 
@@ -109,6 +113,9 @@ namespace CoinbasePro.Services.Products
                 {
                     break;
                 }
+
+                batchEnd = batchEnd.Value.AddSeconds(-(int)granularity);
+
             } while (batchStart > start);
 
             return candleList;
